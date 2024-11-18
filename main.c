@@ -44,6 +44,13 @@ int main()
     sprintf (buffer, "S0\n");
     SendCommands(buffer);
 
+    
+
+
+
+
+
+
 
     // These are sample commands to draw out some information - these are the ones you will be generating.
     sprintf (buffer, "G0 X-13.41849 Y0.000\n");
