@@ -18,8 +18,14 @@ int main()
     {
         printf("ok");
 
-        char character = fgetc(FileT);
-        printf("%s",character);
+        char myString[100];
+
+// Read the content and print it
+        while(fgets(myString, 100, FileT)) 
+        {
+        printf("%s", myString);
+        }
+
 
         fclose(FileT);
     }
