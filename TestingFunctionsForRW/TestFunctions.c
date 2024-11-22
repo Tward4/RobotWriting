@@ -4,6 +4,8 @@
 int main()
 {
 
+    char *FileFontTxt;
+
     FILE *FileT;
 
     FileT = fopen("FileTest.txt","r");
@@ -16,18 +18,42 @@ int main()
     }    
     else
     {
-        printf("ok");
+         long FileSize;
+         fseek(FileT,0,SEEK_END);
 
-        char myString[100];
+         FileSize = ftell(FileT);
+        rewind(FileT);
 
-// Read the content and print it
-        while(fgets(myString, 100, FileT)) 
+        
+
+        printf("%ld", FileSize);
+
+        FileFontTxt = (char *)calloc(FileSize, sizeof(char)); //allocating memory
+
+        if (FileFontTxt == NULL)
+            {
+                perror("Memory allocation failed!");
+                fclose(FileT);
+                return -1;
+            }
+
+        size_t BytesRead = fread(FileFontTxt, sizeof(char),FileSize, FileT);
+        if (BytesRead != FileSize)
         {
-        printf("%s", myString);
+            perror("Error reading file");
+            free(FileFontTxt);
+            fclose(FileT);
+            return -1;
         }
 
+        FileFontTxt[FileSize] = '\0';
 
+        printf("File Content: \n%s\n", FileFontTxt);
+        free(FileFontTxt);
         fclose(FileT);
+
+        return 0;
+
     }
  
 
