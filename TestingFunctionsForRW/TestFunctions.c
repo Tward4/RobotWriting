@@ -18,29 +18,30 @@ int main()
     }    
     else
     {
-         long FileSize;
-         fseek(FileT,0,SEEK_END);
+        size_t FileSize;
+        fseek(FileT,0,SEEK_END);
 
-         FileSize = ftell(FileT);
+        FileSize = ftell(FileT);
         rewind(FileT);
 
         
 
-        printf("%ld", FileSize);
+        printf("%lld\n", FileSize);
 
         FileFontTxt = (char *)calloc(FileSize, sizeof(char)); //allocating memory
 
         if (FileFontTxt == NULL)
             {
-                perror("Memory allocation failed!");
+                printf("Memory allocation failed!");
                 fclose(FileT);
                 return -1;
             }
 
-        size_t BytesRead = fread(FileFontTxt, sizeof(char),FileSize, FileT);
+        size_t BytesRead = 0;
+        BytesRead = fread(FileFontTxt, sizeof(char),FileSize, FileT);
         if (BytesRead != FileSize)
         {
-            perror("Error reading file");
+            printf("Error reading file");
             free(FileFontTxt);
             fclose(FileT);
             return -1;
