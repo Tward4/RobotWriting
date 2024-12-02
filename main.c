@@ -9,6 +9,9 @@
 
 void SendCommands (char *buffer );
 
+
+
+//Structure converting the Letters to Ascii.
 struct point
 { 
     int x;
@@ -16,51 +19,27 @@ struct point
     int p;
 };
 
+struct Strokes
+{
+    int x;
+    int y;
+    int p;
+};
+
+
+
 
 
 //Structure converting the Letters to Ascii.
-int LettersToAscii(struct point *pArray,int CharacterSize,char WordBuffer); 
+void LettersToAscii(struct point *pArray, struct Strokes *pStroke, int CharacterSize,char WordBuffer[10]); 
+
+
+
 
 int main()
 {
 
-    //char mode[]= {'8','N','1',0};
-    char buffer[100];
-
-    // If we cannot open the port then give up immediately
-    if ( CanRS232PortBeOpened() == -1 )
-    {
-        printf ("\nUnable to open the COM port (specified in serial.h) ");
-        exit (0);
-    }
-
-    // Time to wake up the robot
-    printf ("\nAbout to wake up the robot\n");
-
-    // We do this by sending a new-line
-    sprintf (buffer, "\n");
-     // printf ("Buffer to send: %s", buffer); // For diagnostic purposes only, normally comment out
-    PrintBuffer (&buffer[0]);
-    Sleep(100);
-
-    // This is a special case - we wait  until we see a dollar ($)
-    WaitForDollar();
-
-    printf ("\nThe robot is now ready to draw\n");
-
-        //These commands get the robot into 'ready to draw mode' and need to be sent before any writing commands
-    sprintf (buffer, "G1 X0 Y0 F1000\n");
-    SendCommands(buffer);
-    sprintf (buffer, "M3\n");
-    SendCommands(buffer);
-    sprintf (buffer, "S0\n");
-    SendCommands(buffer);
-
     
-
-
-    char WordBuffer[10];
-
     FILE *fFontTxt;
 
     fFontTxt = fopen("FontTextTest.txt","r");
@@ -69,24 +48,28 @@ int main()
     {
         printf("The file is not opened. The program will now exit.");
 
+        
         return -1;
     }   
 
 
     
-    struct point *pArray = (struct point *)malloc(sizeof(struct point));
-    
+    struct point *pArray = (struct point *)calloc((1027*3), sizeof(struct point));
+
+    if (pArray == NULL) 
+    {
+        printf("Memory allocation for Array failed!\n");
+        
+        free(pArray);
+        return -1;
+    }
+
+
     int i;
-    for (i=0; i<1028;i++)
+    for (i=0; i<1027;i++)
     {
         fscanf(fFontTxt,"%d%d%d",&pArray[i].x,&pArray[i].y,&pArray[i].p); //This now reads the File data
-        int test = (pArray[i].x);
 
-
-        if (pArray[i].x == 999)
-        {
-            printf("ok");
-        }
     }
     
     //Reading the Text Word File
@@ -113,6 +96,17 @@ int main()
 
     printf("Successfully opened %s",FileName);
 
+    char *WordBuffer = calloc(20, sizeof(char));
+
+    if (WordBuffer == NULL) 
+    {
+        printf("The file is not opened. The program will now exit.");
+
+        
+    return -1;
+    }
+
+
     fscanf(fWordFile,"%s",WordBuffer);
     printf("\n%s",WordBuffer);
 
@@ -132,9 +126,29 @@ int main()
     }
     printf("Font Size %d selected",CharacterSize);
 
-  
+    struct Strokes *pStrokes = (struct Strokes *)calloc((1027*3), sizeof(struct Strokes));
+    
+    if (pStrokes == NULL) 
+    {
+        printf("Memory allocation for Array failed!\n");
+        
+        free(pStrokes);
+        return -1;
+    }
+
+                      
+
+    LettersToAscii(pArray, pStrokes, CharacterSize, WordBuffer);
+
+
+
+    free(pArray);
+    free(pStrokes);
+
     fclose(fWordFile);
     fclose(fFontTxt);
+
+
 
             
             
@@ -172,32 +186,60 @@ int main()
     return (0);
 }
 
-int LettersToAscii(struct point *pArray,int CharacterSize,char WordBuffer)
+void LettersToAscii(struct point *pArray, struct Strokes *pStrokes, int CharacterSize,char WordBuffer[10])
 {
         int WordLength = 0;
         int AsciiBuffer = 0;
-        scanf("%s%n",&WordBuffer,&WordLength);
-
-        int ii;
-        int iii;
-        int CharacterSizeBuffer = 0;
-        int LetterStrokes = 0;
-        for (ii=0; ii<WordLength;ii++)
+        
+        while (WordBuffer[WordLength] != '\0') //counts the letters
         {
-            printf("%d",WordLength);
+            WordLength ++;
+        }
 
-            AsciiBuffer=(int)(&WordBuffer)[ii]; //converting letters into the corresponding Ascii numbers.
+        int i;
+        int ii;
+        int iii = 0;
+        int LetterStrokes = 0;
+        
+            
 
-            scanf("%n%n", &pArray[AsciiBuffer].p,&LetterStrokes); //finds how many letter strokes are needed for Ascii number.
+        for (i=0; i<WordLength;i++)
+        {
+            int LineinFontFile = 0;            
+            AsciiBuffer=(int)(WordBuffer[i]); //converting letters into the corresponding Ascii numbers.
 
-            for (iii=AsciiBuffer; iii<iii+LetterStrokes; iii++)
+            for (ii=0; ii<1027; ii++)
             {
-                CharacterSizeBuffer = pArray[iii].p;     //
+                if (pArray[ii].x==999 && pArray[ii].y==(AsciiBuffer))
+                LineinFontFile = ii;
+                
+            }
+
+            
+
+            LetterStrokes= pArray[LineinFontFile].p; //finds how many letter strokes are needed for Ascii number.
+
+            
+
+            for (iii=0; iii<LetterStrokes; iii++)  
+            {
+                
+               pStrokes[iii].x = (pArray[LineinFontFile+iii+1].x)/CharacterSize;     // amending stroke coordinates, scaling them and adding to a new struct to store data for the word.
+                pStrokes[iii].y = (pArray[LineinFontFile+iii+1].y)/CharacterSize;
+                pStrokes[iii].p = (pArray[LineinFontFile+iii+1].p);
+
+                printf("%d",pStrokes[iii].x);
+                printf("%d",pStrokes[iii].y);
+                printf("%d",pStrokes[iii].p);
+
+                      
                 
             }
             
+            
+            
         }
-        return iii;
+ 
 }
 
 // Send the data to the robot - note in 'PC' mode you need to hit space twice
