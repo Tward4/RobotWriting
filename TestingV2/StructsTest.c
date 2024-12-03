@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 struct point
 { 
@@ -11,23 +12,31 @@ struct point
 
 struct Strokes
 {
-    int x;
-    int y;
-    int p;
+    float x;
+    float y;
+    float p;
 };
 
 
 
 
 
-//Structure converting the Letters to Ascii.
-void LettersToAscii(struct point *pArray, struct Strokes *pStroke, int CharacterSize,char WordBuffer[10]); 
+
+//FUnction converting the Letters to Ascii to Font code.
+void LettersToAscii(struct point *pArray, struct Strokes *pStrokes, float CharacterFraction, char WordBuffer[10], float *XCoord, float *YCoord); 
+
+//Function converting Font code to G-Code.
+void FontCodeToGCode(struct Strokes *pStroke);
+
 
 
 
 
 int main()
 {
+    float XCoord = 0;
+    float YCoord = -5;
+
 
     
     FILE *fFontTxt;
@@ -96,18 +105,12 @@ int main()
     return -1;
     }
 
-
-    fscanf(fWordFile,"%s",WordBuffer);
-    printf("\n%s",WordBuffer);
-
-// Font size question.
-
-    int CharacterSize;
+    int CharacterSize;      // Selecting Character Size
     FontSize:
     printf("\nPlease enter font size between 4 and 10: ");
     scanf("%d",&CharacterSize);
 
-// Check if font size is within limit
+    // Check if font size is within limit
 
     if (CharacterSize >= 11 || CharacterSize <=3)
     {
@@ -115,25 +118,41 @@ int main()
         goto FontSize;
     }
     printf("Font Size %d selected",CharacterSize);
+    float CharacterFraction = 0;
+    CharacterFraction = (float)CharacterSize/18;
 
-    struct Strokes *pStrokes = (struct Strokes *)calloc((1027*3), sizeof(struct Strokes));
-    
-    if (pStrokes == NULL) 
+
+
+    while (fscanf(fWordFile,"%s",WordBuffer) == 1)
     {
-        printf("Memory allocation for Array failed!\n");
-        
-        free(pStrokes);
-        return -1;
+            printf("\n%s",WordBuffer);
+
+            // Font size question.
+
+        struct Strokes *pStrokes = (struct Strokes *)calloc((1027*3), sizeof(struct Strokes));
+
+        if (pStrokes == NULL) 
+        {
+            printf("Memory allocation for Array failed!\n");
+
+            free(pStrokes);
+            return -1;
+        }
+
+ 
+           LettersToAscii(pArray, pStrokes, CharacterFraction, WordBuffer, &XCoord, &YCoord);
+           free(pStrokes);
     }
 
-                      
 
-    LettersToAscii(pArray, pStrokes, CharacterSize, WordBuffer);
+    printf("\ncount: %f",XCoord);
+    printf("\ncount: %f",YCoord);
+
+
 
 
 
     free(pArray);
-    free(pStrokes);
 
     fclose(fWordFile);
     fclose(fFontTxt);
@@ -144,63 +163,114 @@ int main()
             
         
             
-void LettersToAscii(struct point *pArray, struct Strokes *pStrokes, int CharacterSize,char WordBuffer[10])
+void LettersToAscii(struct point *pArray, struct Strokes *pStrokes, float CharacterFraction,char WordBuffer[10], float *XCoord, float *YCoord)
 {
-        int WordLength = 0;
-        int AsciiBuffer = 0;
+    int WordLength = 0;
+    int AsciiBuffer = 0;
+
         
-        while (WordBuffer[WordLength] != '\0') //counts the letters
+    while (WordBuffer[WordLength] != '\0') //counts the letters
+    {
+        WordLength ++;
+    }
+
+    int i;
+    int ii;
+    int iii = 0;
+    int LetterStrokes = 0;
+
+   
+
+    
+            
+
+    for (i=0; i<WordLength;i++)
+    {
+        int LineinFontFile = 0;    
+        float MaxLetterLength = 0;   
+        float MaxLetterHeight = 0;     
+        AsciiBuffer=(int)(WordBuffer[i]); //converting letters into the corresponding Ascii numbers.
+
+        for (ii=0; ii<1027; ii++)
         {
-            WordLength ++;
+            if (pArray[ii].x==999 && pArray[ii].y==(AsciiBuffer))
+            LineinFontFile = ii;
+             
+                
         }
 
-        int i;
-        int ii;
-        int iii = 0;
-        int LetterStrokes = 0;
-        
             
 
-        for (i=0; i<WordLength;i++)
+        LetterStrokes= pArray[LineinFontFile].p; //finds how many letter strokes are needed for Ascii number.
+
+            
+
+        for (iii=0; iii<LetterStrokes; iii++)  
         {
-            int LineinFontFile = 0;            
-            AsciiBuffer=(int)(WordBuffer[i]); //converting letters into the corresponding Ascii numbers.
 
-            for (ii=0; ii<1027; ii++)
-            {
-                if (pArray[ii].x==999 && pArray[ii].y==(AsciiBuffer))
-                LineinFontFile = ii;
+            pStrokes[iii].x = ((CharacterFraction)*((float)pArray[LineinFontFile+iii+1].x))+*XCoord;   //Dividing Scale to get true font size.
+            pStrokes[iii].y = ((CharacterFraction)*((float)pArray[LineinFontFile+iii+1].y))+(*YCoord-CharacterFraction);   //Dividing Scale to get true font size.
+            pStrokes[iii].p = ((float)pArray[LineinFontFile+iii+1].p);
+
+
+
+
+
+
+
+            
+            
+                if (MaxLetterLength <= CharacterFraction*(float)pArray[LineinFontFile+iii+1].x)        //Max Letter Length 
+                {
+                    MaxLetterLength += CharacterFraction*(float)pArray[LineinFontFile+iii+1].x;
+                }
+            
+            
+            
+                if (MaxLetterHeight <= CharacterFraction*(float)pArray[LineinFontFile+iii+1].y)        //Max Letter Height
+                {
+                    MaxLetterHeight += CharacterFraction*(float)pArray[LineinFontFile+iii+1].y;
+            
                 
+                }
+            
+               
+            if (iii == LetterStrokes-1)
+            {
+                (*XCoord) += (float)MaxLetterLength;
+                
+                if (*XCoord >= 100)          //Test if X Coordinates go over 100.
+                {        
+
+                    *XCoord = 0;
+                    (*YCoord) -= (float)(MaxLetterHeight)+5;
+                }
+
+                if (*YCoord <= -50)
+                {
+                    printf("\nRobot has run out of space on page");
+                    exit(1);
+                }
+
             }
-
-            
-
-            LetterStrokes= pArray[LineinFontFile].p; //finds how many letter strokes are needed for Ascii number.
-
-            
-
-            for (iii=0; iii<LetterStrokes; iii++)  
-            {
                 
-               pStrokes[iii].x = (pArray[LineinFontFile+iii+1].x)/CharacterSize;     // amending stroke coordinates, scaling them and adding to a new struct to store data for the word.
-                pStrokes[iii].y = (pArray[LineinFontFile+iii+1].y)/CharacterSize;
-                pStrokes[iii].p = (pArray[LineinFontFile+iii+1].p);
+                
 
-                printf("%d",pStrokes[iii].x);
-                printf("%d",pStrokes[iii].y);
-                printf("%d",pStrokes[iii].p);
+
+
+            //printf("\n%f",pStrokes[iii].x);
+            //printf("%f",pStrokes[iii].y);
+            //printf("%f",pStrokes[iii].p);
 
                       
                 
-            }
-            
-            
-            
         }
+            
+            
+            
+    }
  
 }
 
-
-
-
+//void FontCodeToGCode(struct Strokes *pStroke)
 
