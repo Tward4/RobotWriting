@@ -311,10 +311,7 @@ void LettersToAscii(struct point *pArray, struct Strokes *pStrokes, float Charac
     StrokeBuffer += iii;
     }
 
-            //printf("\n%f",pStrokes[iii].x);
-            //printf("%f",pStrokes[iii].y);
-            //printf("%f",pStrokes[iii].p);
-       
+
             
     }
 Gcode:
@@ -324,10 +321,31 @@ FontCodeToGCode(pStrokes, buffer, StrokeBuffer);
 
 void FontCodeToGCode(struct Strokes *pStrokes, char *buffer, int StrokeBuffer)
 {
-    int j;
+    int j=0;
+
+
     
     for (j = 0; j<StrokeBuffer; j++)
     {
+
+     if (pStrokes[j].p == 0.000000)
+    {
+        if (pStrokes[j-1].p != 0)
+        {
+            sprintf(buffer, "S%.0f",pStrokes[j].p);
+            printf("hm");
+        }
+        
+    }
+    else
+    {
+        if (pStrokes[j-1].p !=1.000000)
+        {
+            sprintf(buffer, "S%.0f000",pStrokes[j].p);
+        }
+    }
+
+
         sprintf(buffer,"G%.0f X%.2f Y%.2f\n",pStrokes[j].p,pStrokes[j].x,pStrokes[j].y);
         printf("%s",buffer);
         //SendCommands(*buffer);
