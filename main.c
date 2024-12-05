@@ -174,7 +174,7 @@ int main()
 
     while (fscanf(fWordFile,"%s",WordBuffer) == 1)
     {
-            printf("\n%s",WordBuffer);
+           
 
             // Font size question.
 
