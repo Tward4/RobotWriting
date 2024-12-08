@@ -14,7 +14,7 @@
 
 
 
-//Structure converting the Letters to Ascii.
+//Structure Stores the Letters from Stroke Coords.
 struct point
 { 
     int x;
@@ -22,6 +22,7 @@ struct point
     int p;
 };
 
+//Structure Stores Coordinate data 
 struct Strokes
 {
     float x;
@@ -47,8 +48,8 @@ int main()
 
 
     char buffer[100];
-    float XCoord = 0;
-    float YCoord = -5;
+    float XCoord = 0;   //XCoordinate Preset 
+    float YCoord = -5;  //YCoordinate Preset
 
     // If we cannot open the port then give up immediately
     if ( CanRS232PortBeOpened() == -1 )
@@ -90,7 +91,7 @@ int main()
     
     FILE *fFontTxt;
 
-    fFontTxt = fopen("FontTextTest.txt","r");
+    fFontTxt = fopen("FontTextTest.txt","r");   
  
     if (fFontTxt == NULL) 
     {
@@ -102,7 +103,7 @@ int main()
 
 
     
-    struct point *pArray = (struct point *)calloc((1027*3), sizeof(struct point));
+    struct point *pArray = (struct point *)calloc((1027*3), sizeof(struct point));  //Allocating Memory to Structure
 
     if (pArray == NULL) 
     {
@@ -122,7 +123,7 @@ int main()
     
     //Reading the Text Word File
 
-    char FileName[50];
+    char FileName[50];  
 
     FileSelection:
 
@@ -144,7 +145,7 @@ int main()
 
     printf("Successfully opened %s",FileName);
 
-    char *WordBuffer = calloc(20, sizeof(char));
+    char *WordBuffer = calloc(20, sizeof(char));    //Storing Read Word in Buffer
 
     if (WordBuffer == NULL) 
     {
@@ -159,7 +160,7 @@ int main()
     printf("\nPlease enter font size between 4 and 10: ");
     scanf("%d",&CharacterSize);
 
-    // Check if font size is within limit
+    // Check if font size is within limit of 4 to 10
 
     if (CharacterSize >= 11 || CharacterSize <=3)
     {
@@ -261,7 +262,7 @@ void LettersToAscii(struct point *pArray, struct Strokes *pStrokes, float Charac
 
         for (iii=0; iii<LetterStrokes; iii++)  
         {
-
+            MaxLetterLength = 0;
             pStrokes[iii+StrokeBuffer].x = ((CharacterFraction)*((float)pArray[LineinFontFile+iii+1].x))+*XCoord;   //Dividing Scale to get true font size.
             pStrokes[iii+StrokeBuffer].y = ((CharacterFraction)*((float)pArray[LineinFontFile+iii+1].y))+(*YCoord-CharacterFraction);   //Dividing Scale to get true font size.
             pStrokes[iii+StrokeBuffer].p = ((float)pArray[LineinFontFile+iii+1].p);
@@ -275,9 +276,10 @@ void LettersToAscii(struct point *pArray, struct Strokes *pStrokes, float Charac
 
             
             
-                if (MaxLetterLength <= CharacterFraction*(float)pArray[LineinFontFile+iii+1].x)        //Max Letter Length 
+                if (MaxLetterLength <= CharacterFraction*((float)pArray[LineinFontFile+iii+1].x))        //Max Letter Length 
                 {
-                    MaxLetterLength += CharacterFraction*(float)pArray[LineinFontFile+iii+1].x;
+                    
+                    MaxLetterLength += CharacterFraction*((float)pArray[LineinFontFile+iii+1].x);
                 }
             
             
@@ -297,8 +299,9 @@ void LettersToAscii(struct point *pArray, struct Strokes *pStrokes, float Charac
                 
                 if (*XCoord >= 100)          //Test if X Coordinates go over 100.
                 {        
-                    (*YCoord) -= (float)(MaxLetterHeight)+5;
+                    (*YCoord) -= (float)(MaxLetterHeight)+2;
                     *XCoord = 0;
+                    
                     StrokeBuffer = 0;
                     memset(pStrokes, 0, sizeof(struct Strokes));
                     
@@ -308,6 +311,7 @@ void LettersToAscii(struct point *pArray, struct Strokes *pStrokes, float Charac
 
                     for (r=0; r<WordLength; r++)
                     {
+                        
                         AsciiBuffer=(int)(WordBuffer[r]);
 
                         for (ii=0; ii<1027; ii++)
@@ -318,16 +322,30 @@ void LettersToAscii(struct point *pArray, struct Strokes *pStrokes, float Charac
                 
                         } 
                         LetterStrokes= pArray[LineinFontFile].p; 
-                           
+                        //printf("\n old:%f",pStrokes[iii+StrokeBuffer].x);        
 
                         for (iii=0; iii<LetterStrokes; iii++)  
                         {
-
+                            MaxLetterLength = 0;
                             pStrokes[iii+StrokeBuffer].x = ((CharacterFraction)*((float)pArray[LineinFontFile+iii+1].x))+*XCoord;   //Dividing Scale to get true font size.
                             pStrokes[iii+StrokeBuffer].y = ((CharacterFraction)*((float)pArray[LineinFontFile+iii+1].y))+(*YCoord-CharacterFraction);   //Dividing Scale to get true font size.
                             pStrokes[iii+StrokeBuffer].p = ((float)pArray[LineinFontFile+iii+1].p);  
 
-                            
+                            //printf("\n new:%f",pStrokes[iii+StrokeBuffer].x);  
+                            if (MaxLetterLength <= CharacterFraction*((float)pArray[LineinFontFile+iii+1].x))        //Max Letter Length 
+                            {
+                                
+                                MaxLetterLength += CharacterFraction*((float)pArray[LineinFontFile+iii+1].x);
+                            }
+            
+            
+            
+                             if (MaxLetterHeight <= CharacterFraction*(float)pArray[LineinFontFile+iii+1].y)        //Max Letter Height
+                             {
+                                MaxLetterHeight += CharacterFraction*(float)pArray[LineinFontFile+iii+1].y;
+            
+                
+                            }
 
                              if (iii == LetterStrokes-1)         //resetting word on next line in over page limit.
                             {
@@ -343,6 +361,7 @@ void LettersToAscii(struct point *pArray, struct Strokes *pStrokes, float Charac
                     goto Gcode;
                     
                 }
+               
 
                 if (*YCoord <= -50)
                 {
@@ -355,6 +374,10 @@ void LettersToAscii(struct point *pArray, struct Strokes *pStrokes, float Charac
                 
 
         }
+     
+    
+                
+                
     if (StrokeBufferSignal == 0)
     {
     StrokeBuffer += iii;
@@ -363,9 +386,10 @@ void LettersToAscii(struct point *pArray, struct Strokes *pStrokes, float Charac
 
             
     }
+
 Gcode:
 FontCodeToGCode(pStrokes, buffer, StrokeBuffer);
-
+ 
 }
 
 void FontCodeToGCode(struct Strokes *pStrokes, char *buffer, int StrokeBuffer)
@@ -381,7 +405,7 @@ void FontCodeToGCode(struct Strokes *pStrokes, char *buffer, int StrokeBuffer)
     {
         if (pStrokes[j-1].p != 0.000000)
         {
-            sprintf(buffer, "S%.0f",pStrokes[j].p);
+            sprintf(buffer, "S%.0f\n",pStrokes[j].p);
             SendCommands(buffer);
         }
         
@@ -390,7 +414,7 @@ void FontCodeToGCode(struct Strokes *pStrokes, char *buffer, int StrokeBuffer)
     {
         if (pStrokes[j-1].p !=1.000000)
         {
-            sprintf(buffer, "S%.0f000",pStrokes[j].p);
+            sprintf(buffer, "S%.0f000\n",pStrokes[j].p);
             SendCommands(buffer);
         }
     }

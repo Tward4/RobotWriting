@@ -36,7 +36,7 @@ int main()
 {
     char buffer [100];
     float XCoord = 0;
-    float YCoord = -5;
+    float YCoord = -10;
 
 
 
@@ -127,7 +127,7 @@ int main()
 
     while (fscanf(fWordFile,"%s",WordBuffer) == 1)
     {
-            printf("\n%s",WordBuffer);
+            //printf("\n%s",WordBuffer);
 
             // Font size question.
 
@@ -212,7 +212,7 @@ void LettersToAscii(struct point *pArray, struct Strokes *pStrokes, float Charac
 
         for (iii=0; iii<LetterStrokes; iii++)  
         {
-
+            MaxLetterLength = 0;
             pStrokes[iii+StrokeBuffer].x = ((CharacterFraction)*((float)pArray[LineinFontFile+iii+1].x))+*XCoord;   //Dividing Scale to get true font size.
             pStrokes[iii+StrokeBuffer].y = ((CharacterFraction)*((float)pArray[LineinFontFile+iii+1].y))+(*YCoord-CharacterFraction);   //Dividing Scale to get true font size.
             pStrokes[iii+StrokeBuffer].p = ((float)pArray[LineinFontFile+iii+1].p);
@@ -226,9 +226,10 @@ void LettersToAscii(struct point *pArray, struct Strokes *pStrokes, float Charac
 
             
             
-                if (MaxLetterLength <= CharacterFraction*(float)pArray[LineinFontFile+iii+1].x)        //Max Letter Length 
+                if (MaxLetterLength <= CharacterFraction*((float)pArray[LineinFontFile+iii+1].x))        //Max Letter Length 
                 {
-                    MaxLetterLength += CharacterFraction*(float)pArray[LineinFontFile+iii+1].x;
+                    
+                    MaxLetterLength += CharacterFraction*((float)pArray[LineinFontFile+iii+1].x);
                 }
             
             
@@ -248,8 +249,9 @@ void LettersToAscii(struct point *pArray, struct Strokes *pStrokes, float Charac
                 
                 if (*XCoord >= 100)          //Test if X Coordinates go over 100.
                 {        
-                    (*YCoord) -= (float)(MaxLetterHeight)+5;
+                    (*YCoord) -= (float)(MaxLetterHeight);
                     *XCoord = 0;
+                    
                     StrokeBuffer = 0;
                     memset(pStrokes, 0, sizeof(struct Strokes));
                     
@@ -259,6 +261,7 @@ void LettersToAscii(struct point *pArray, struct Strokes *pStrokes, float Charac
 
                     for (r=0; r<WordLength; r++)
                     {
+                        
                         AsciiBuffer=(int)(WordBuffer[r]);
 
                         for (ii=0; ii<1027; ii++)
@@ -273,12 +276,26 @@ void LettersToAscii(struct point *pArray, struct Strokes *pStrokes, float Charac
 
                         for (iii=0; iii<LetterStrokes; iii++)  
                         {
-
+                            MaxLetterLength = 0;
                             pStrokes[iii+StrokeBuffer].x = ((CharacterFraction)*((float)pArray[LineinFontFile+iii+1].x))+*XCoord;   //Dividing Scale to get true font size.
                             pStrokes[iii+StrokeBuffer].y = ((CharacterFraction)*((float)pArray[LineinFontFile+iii+1].y))+(*YCoord-CharacterFraction);   //Dividing Scale to get true font size.
                             pStrokes[iii+StrokeBuffer].p = ((float)pArray[LineinFontFile+iii+1].p);  
 
                             //printf("\n new:%f",pStrokes[iii+StrokeBuffer].x);  
+                            if (MaxLetterLength <= CharacterFraction*((float)pArray[LineinFontFile+iii+1].x))        //Max Letter Length 
+                            {
+                                
+                                MaxLetterLength += CharacterFraction*((float)pArray[LineinFontFile+iii+1].x);
+                            }
+            
+            
+            
+                             if (MaxLetterHeight <= CharacterFraction*(float)pArray[LineinFontFile+iii+1].y)        //Max Letter Height
+                             {
+                                MaxLetterHeight += CharacterFraction*(float)pArray[LineinFontFile+iii+1].y;
+            
+                
+                            }
 
                              if (iii == LetterStrokes-1)         //resetting word on next line in over page limit.
                             {
@@ -294,8 +311,9 @@ void LettersToAscii(struct point *pArray, struct Strokes *pStrokes, float Charac
                     goto Gcode;
                     
                 }
+               
 
-                if (*YCoord <= -50)
+                if (*YCoord <= -70)
                 {
                     printf("\nRobot has run out of space on page");
                     exit(1);
@@ -306,6 +324,10 @@ void LettersToAscii(struct point *pArray, struct Strokes *pStrokes, float Charac
                 
 
         }
+     
+    
+                
+                
     if (StrokeBufferSignal == 0)
     {
     StrokeBuffer += iii;
@@ -314,6 +336,7 @@ void LettersToAscii(struct point *pArray, struct Strokes *pStrokes, float Charac
 
             
     }
+
 Gcode:
 FontCodeToGCode(pStrokes, buffer, StrokeBuffer);
  
@@ -333,7 +356,7 @@ void FontCodeToGCode(struct Strokes *pStrokes, char *buffer, int StrokeBuffer)
         if (pStrokes[j-1].p != 0)
         {
             sprintf(buffer, "S%.0f",pStrokes[j].p);
-            printf("hm");
+            //printf("hm");
         }
         
     }
