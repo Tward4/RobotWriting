@@ -49,7 +49,7 @@ int main()
 
     char buffer[100];
     float XCoord = 0;   //XCoordinate Preset 
-    float YCoord = -5;  //YCoordinate Preset
+    float YCoord = -10;  //YCoordinate Preset
 
     // If we cannot open the port then give up immediately
     if ( CanRS232PortBeOpened() == -1 )
@@ -72,7 +72,7 @@ int main()
 
     printf ("\nThe robot is now ready to draw\n");
 
-        //These commands get the robot into 'ready to draw mode' and need to be sent before any writing commands
+    //These commands get the robot into 'ready to draw mode' and need to be sent before any writing commands
     sprintf (buffer, "G1 X0 Y0 F1000\n");
     SendCommands(buffer);
     sprintf (buffer, "M3\n");
@@ -88,7 +88,7 @@ int main()
 
 
 
-    
+    //Opening Font File 
     FILE *fFontTxt;
 
     fFontTxt = fopen("FontTextTest.txt","r");   
@@ -102,8 +102,8 @@ int main()
     }   
 
 
-    
-    struct point *pArray = (struct point *)calloc((1027*3), sizeof(struct point));  //Allocating Memory to Structure
+    //Allocating memory to struct
+    struct point *pArray = (struct point *)calloc((1027*3), sizeof(struct point));  
 
     if (pArray == NULL) 
     {
@@ -113,12 +113,12 @@ int main()
         return 1;
     }
 
-
+    //Storing Stroke Font data in a struct
     int i;
     for (i=0; i<1027;i++)
     {
-        fscanf(fFontTxt,"%d%d%d",&pArray[i].x,&pArray[i].y,&pArray[i].p); //This now reads the File data
-
+        //This variable now reads the File data
+        fscanf(fFontTxt,"%d%d%d",&pArray[i].x,&pArray[i].y,&pArray[i].p); 
     }
     
     //Reading the Text Word File
@@ -145,7 +145,29 @@ int main()
 
     printf("Successfully opened %s",FileName);
 
-    char *WordBuffer = calloc(20, sizeof(char));    //Storing Read Word in Buffer
+
+    //Selecting Character Size
+    int CharacterSize;      
+    FontSize:
+    printf("\nPlease enter font size between 4 and 10: ");
+    scanf("%d",&CharacterSize);
+
+
+    //Check if font size is within limit of 4 to 10
+    if (CharacterSize >= 11 || CharacterSize <=3)
+    {
+        printf("Charasize of %d is not possible, please try again.",CharacterSize);
+        goto FontSize;
+    }
+    printf("Font Size %d selected",CharacterSize);
+
+    //Creating font fraction to multiply against font coordinates to get true size
+    float CharacterFraction = 0;
+    CharacterFraction = (float)CharacterSize/18;
+
+
+    //Allocating Memory for WordBuffer
+    char *WordBuffer = calloc(20, sizeof(char));    
 
     if (WordBuffer == NULL) 
     {
@@ -155,30 +177,13 @@ int main()
     return 1;
     }
 
-    int CharacterSize;      // Selecting Character Size
-    FontSize:
-    printf("\nPlease enter font size between 4 and 10: ");
-    scanf("%d",&CharacterSize);
-
-    // Check if font size is within limit of 4 to 10
-
-    if (CharacterSize >= 11 || CharacterSize <=3)
-    {
-        printf("Charasize of %d is not possible, please try again.",CharacterSize);
-        goto FontSize;
-    }
-    printf("Font Size %d selected",CharacterSize);
-    float CharacterFraction = 0;
-    CharacterFraction = (float)CharacterSize/18;
-
-
-
+    //Storing Read Word in Buffer
     while (fscanf(fWordFile,"%s",WordBuffer) == 1)
     {
            
 
-            // Font size question.
-
+            
+        //Allocating memory to struct
         struct Strokes *pStrokes = (struct Strokes *)calloc((1027*3), sizeof(struct Strokes));
 
         if (pStrokes == NULL) 
@@ -189,18 +194,20 @@ int main()
             return 1;
         }
 
- 
-           LettersToAscii(pArray, pStrokes, CharacterFraction, WordBuffer, &XCoord, &YCoord, buffer);
+            //Function called inside While loop, if there is a word remaining the function will be processed
+            LettersToAscii(pArray, pStrokes, CharacterFraction, WordBuffer, &XCoord, &YCoord, buffer);
            
-           free(pStrokes);
+            //Freeing up space in pStroke Structure after every word has been sent
+            free(pStrokes);
     }
 
 
 
 
-
+    //Freeing up space in pArray Structure
     free(pArray);
 
+    //Closing files after use
     fclose(fWordFile);
     fclose(fFontTxt);
 
@@ -216,36 +223,37 @@ int main()
     return (0);
 }
 
+
+//Structure which reads the letters into Ascii units and exports them as coordinates from a font file
 void LettersToAscii(struct point *pArray, struct Strokes *pStrokes, float CharacterFraction,char WordBuffer[10], float *XCoord, float *YCoord, char *buffer)
 {
+    int i;
+    int ii;
+    int iii;
+    int LetterStrokes = 0;
+    int StrokeBuffer = 0;
     int WordLength = 0;
     int AsciiBuffer = 0;
     int StrokeBufferSignal = 0;
 
-        
-    while (WordBuffer[WordLength] != '\0') //counts the letters
+    //Counts the letters in the word    
+    while (WordBuffer[WordLength] != '\0') 
     {
         WordLength ++;
     }
 
-    int i;
-    int ii;
-    int iii = 0;
-    int LetterStrokes = 0;
-    int StrokeBuffer = 0;
-   
-
-    
-            
-
+              
+    //For loop which has a range in the amount of letters in the word
     for (i=0; i<WordLength;i++)
     {
         int LineinFontFile = 0;    
         float MaxLetterLength = 0;   
         float MaxLetterHeight = 0;
              
-        AsciiBuffer=(int)(WordBuffer[i]); //converting letters into the corresponding Ascii numbers.
+        //Converting letters into the corresponding Ascii unit
+        AsciiBuffer=(int)(WordBuffer[i]);
 
+        //Finding the corresponding Ascii unit
         for (ii=0; ii<1027; ii++)
         {
             if (pArray[ii].x==999 && pArray[ii].y==(AsciiBuffer))
@@ -253,62 +261,49 @@ void LettersToAscii(struct point *pArray, struct Strokes *pStrokes, float Charac
              
                 
         }
+           
+        //Stores how many letter stroke commands are needed for the Ascii unit
+        LetterStrokes= pArray[LineinFontFile].p; 
 
-            
-
-        LetterStrokes= pArray[LineinFontFile].p; //finds how many letter strokes are needed for Ascii number.
-
-            
-
+        //Stores the font coordinates in a new struct    
         for (iii=0; iii<LetterStrokes; iii++)  
         {
             MaxLetterLength = 0;
-            pStrokes[iii+StrokeBuffer].x = ((CharacterFraction)*((float)pArray[LineinFontFile+iii+1].x))+*XCoord;   //Dividing Scale to get true font size.
-            pStrokes[iii+StrokeBuffer].y = ((CharacterFraction)*((float)pArray[LineinFontFile+iii+1].y))+(*YCoord-CharacterFraction);   //Dividing Scale to get true font size.
+            pStrokes[iii+StrokeBuffer].x = ((CharacterFraction)*((float)pArray[LineinFontFile+iii+1].x))+*XCoord;   //Multipling Scale to get true font size.
+            pStrokes[iii+StrokeBuffer].y = ((CharacterFraction)*((float)pArray[LineinFontFile+iii+1].y))+(*YCoord-CharacterFraction);   //Multipling Scale to get true font size.
             pStrokes[iii+StrokeBuffer].p = ((float)pArray[LineinFontFile+iii+1].p);
 
-
-            
-
-
-
-
-
-            
-            
-                if (MaxLetterLength <= CharacterFraction*((float)pArray[LineinFontFile+iii+1].x))        //Max Letter Length 
-                {
                     
-                    MaxLetterLength += CharacterFraction*((float)pArray[LineinFontFile+iii+1].x);
-                }
+            //Finding max letter length
+            if (MaxLetterLength <= CharacterFraction*((float)pArray[LineinFontFile+iii+1].x))         
+            {
+                MaxLetterLength += CharacterFraction*((float)pArray[LineinFontFile+iii+1].x);
+            }
             
+            //Finding max letter height
+            if (MaxLetterHeight <= CharacterFraction*(float)pArray[LineinFontFile+iii+1].y)        
+            {
+                MaxLetterHeight += CharacterFraction*(float)pArray[LineinFontFile+iii+1].y;
+            }
             
-            
-                if (MaxLetterHeight <= CharacterFraction*(float)pArray[LineinFontFile+iii+1].y)        //Max Letter Height
-                {
-                    MaxLetterHeight += CharacterFraction*(float)pArray[LineinFontFile+iii+1].y;
-            
-                
-                }
-            
-               
-            if (iii == LetterStrokes-1)         //resetting word on next line in over page limit.
+            //At the end of the letter, store the max letter width for ofset   
+            if (iii == LetterStrokes-1)         
             {
                 (*XCoord) += (float)MaxLetterLength;
                 
-                
-                if (*XCoord >= 100)          //Test if X Coordinates go over 100.
+                //Test if X Coordinates go over 100
+                if (*XCoord >= 100)          
                 {        
+                    //Ofset in Y if X axis is full
                     (*YCoord) -= (float)(MaxLetterHeight)+2;
                     *XCoord = 0;
                     
                     StrokeBuffer = 0;
                     memset(pStrokes, 0, sizeof(struct Strokes));
-                    
                     AsciiBuffer = 0;
                     int r;
 
-
+                    //Re-doing the start of the function with stroke Coordinates but now with the Y ofset
                     for (r=0; r<WordLength; r++)
                     {
                         
@@ -317,52 +312,48 @@ void LettersToAscii(struct point *pArray, struct Strokes *pStrokes, float Charac
                         for (ii=0; ii<1027; ii++)
                         {           
                             if (pArray[ii].x==999 && pArray[ii].y==(AsciiBuffer))
-                            LineinFontFile = ii;
-             
-                
-                        } 
+                            LineinFontFile = ii;   
+                        }
+
                         LetterStrokes= pArray[LineinFontFile].p; 
-                        //printf("\n old:%f",pStrokes[iii+StrokeBuffer].x);        
 
                         for (iii=0; iii<LetterStrokes; iii++)  
                         {
                             MaxLetterLength = 0;
-                            pStrokes[iii+StrokeBuffer].x = ((CharacterFraction)*((float)pArray[LineinFontFile+iii+1].x))+*XCoord;   //Dividing Scale to get true font size.
-                            pStrokes[iii+StrokeBuffer].y = ((CharacterFraction)*((float)pArray[LineinFontFile+iii+1].y))+(*YCoord-CharacterFraction);   //Dividing Scale to get true font size.
+                            pStrokes[iii+StrokeBuffer].x = ((CharacterFraction)*((float)pArray[LineinFontFile+iii+1].x))+*XCoord;   
+                            pStrokes[iii+StrokeBuffer].y = ((CharacterFraction)*((float)pArray[LineinFontFile+iii+1].y))+(*YCoord-CharacterFraction); 
                             pStrokes[iii+StrokeBuffer].p = ((float)pArray[LineinFontFile+iii+1].p);  
 
-                            //printf("\n new:%f",pStrokes[iii+StrokeBuffer].x);  
-                            if (MaxLetterLength <= CharacterFraction*((float)pArray[LineinFontFile+iii+1].x))        //Max Letter Length 
+                              
+                            if (MaxLetterLength <= CharacterFraction*((float)pArray[LineinFontFile+iii+1].x))        
                             {
-                                
                                 MaxLetterLength += CharacterFraction*((float)pArray[LineinFontFile+iii+1].x);
                             }
             
             
             
-                             if (MaxLetterHeight <= CharacterFraction*(float)pArray[LineinFontFile+iii+1].y)        //Max Letter Height
-                             {
+                            if (MaxLetterHeight <= CharacterFraction*(float)pArray[LineinFontFile+iii+1].y)        
+                            {
                                 MaxLetterHeight += CharacterFraction*(float)pArray[LineinFontFile+iii+1].y;
-            
-                
                             }
 
-                             if (iii == LetterStrokes-1)         //resetting word on next line in over page limit.
+                            if (iii == LetterStrokes-1)         
                             {
-                                (*XCoord) += (float)MaxLetterLength;                                                
-
+                                (*XCoord) += (float)MaxLetterLength;
                             }
                         
                         }
+                        //Adding to the Buffer to record the amount of strokes for the word
                         StrokeBuffer += iii;
                     
                     }
+                    //Identifies if the sentence needed another line
                     StrokeBufferSignal = 1;
                     goto Gcode;
                     
                 }
                
-
+                //Checks if the page has ran out at the limit of -50 in the Y axis
                 if (*YCoord <= -50)
                 {
                     printf("\nRobot has run out of space on page");
@@ -377,7 +368,7 @@ void LettersToAscii(struct point *pArray, struct Strokes *pStrokes, float Charac
      
     
                 
-                
+    //Check if the Word has gone onto the next Sentence, if not the Buffer adds. If statement makes sure it doesnt count twice            
     if (StrokeBufferSignal == 0)
     {
     StrokeBuffer += iii;
@@ -386,7 +377,7 @@ void LettersToAscii(struct point *pArray, struct Strokes *pStrokes, float Charac
 
             
     }
-
+//Calls Function GCode which converts font coordinates to GCode values
 Gcode:
 FontCodeToGCode(pStrokes, buffer, StrokeBuffer);
  
@@ -396,32 +387,33 @@ void FontCodeToGCode(struct Strokes *pStrokes, char *buffer, int StrokeBuffer)
 {
     int j=0;
     
-
-    
+    //For loop in range of the word
     for (j = 0; j<StrokeBuffer; j++)
     {
 
-    if (pStrokes[j].p == 0.000000)
-    {
-        if (pStrokes[j-1].p != 0.000000)
+        //If Else statement allows GCode to know if its a pen up or down command.
+        if (pStrokes[j].p == 0.000000)
         {
-            sprintf(buffer, "S%.0f\n",pStrokes[j].p);
-            SendCommands(buffer);
-        }
+            if (pStrokes[j-1].p != 0.000000)
+            {
+                sprintf(buffer, "S%.0f\n",pStrokes[j].p);
+                SendCommands(buffer);
+            }
         
-    }
-    else
-    {
-        if (pStrokes[j-1].p !=1.000000)
-        {
-            sprintf(buffer, "S%.0f000\n",pStrokes[j].p);
-            SendCommands(buffer);
         }
-    }
+        else
+        {
+            if (pStrokes[j-1].p !=1.000000)
+            {
+                sprintf(buffer, "S%.0f000\n",pStrokes[j].p);
+                SendCommands(buffer);
+            }
+        }
 
+        //Sending GCode commands through a buffer
         sprintf(buffer,"G%.0f X%.2f Y%.2f\n",pStrokes[j].p,pStrokes[j].x,pStrokes[j].y);
-        //printf("%f",pStrokes[j].p);
 
+        //Calling GCode to Robot sending function
         SendCommands(buffer);
     }
 }
@@ -433,9 +425,9 @@ void FontCodeToGCode(struct Strokes *pStrokes, char *buffer, int StrokeBuffer)
 // as the dummy 'WaitForReply' has a getch() within the function.
 void SendCommands (char *buffer )
 {
-    //printf ("Buffer to send: %s", buffer); // For diagnostic purposes only, normally comment out
+ 
     PrintBuffer (&buffer[0]);
     WaitForReply();
-    Sleep(100); // Can omit this when using the writing robot but has minimal effect
-    // getch(); // Omit this once basic testing with emulator has taken place
+    Sleep(100); 
+
 }
