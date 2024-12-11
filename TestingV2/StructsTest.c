@@ -236,7 +236,8 @@ void LettersToAscii(struct point *pArray, struct Strokes *pStrokes, float Charac
             
                 if (MaxLetterHeight <= CharacterFraction*(float)pArray[LineinFontFile+iii+1].y)        //Max Letter Height
                 {
-                    MaxLetterHeight += CharacterFraction*(float)pArray[LineinFontFile+iii+1].y;
+                    MaxLetterHeight += CharacterFraction*((float)pArray[LineinFontFile+iii+1].y);
+
             
                 
                 }
@@ -327,7 +328,7 @@ void LettersToAscii(struct point *pArray, struct Strokes *pStrokes, float Charac
      
     
                 
-                
+    
     if (StrokeBufferSignal == 0)
     {
     StrokeBuffer += iii;
@@ -336,6 +337,7 @@ void LettersToAscii(struct point *pArray, struct Strokes *pStrokes, float Charac
 
             
     }
+
 
 Gcode:
 FontCodeToGCode(pStrokes, buffer, StrokeBuffer);
