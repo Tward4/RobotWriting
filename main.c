@@ -156,7 +156,7 @@ int main()
     //Check if font size is within limit of 4 to 10
     if (CharacterSize >= 11 || CharacterSize <=3)
     {
-        printf("Charasize of %d is not possible, please try again.",CharacterSize);
+        printf("Character size of %d is not possible, please try again.",CharacterSize);
         goto FontSize;
     }
     printf("Font Size %d selected",CharacterSize);
@@ -286,7 +286,7 @@ void LettersToAscii(struct point *pArray, struct Strokes *pStrokes, float Charac
                 MaxLetterHeight += CharacterFraction*(float)pArray[LineinFontFile+iii+1].y;
             }
             
-            //At the end of the letter, store the max letter width for ofset   
+            //At the end of the letter, store the max letter width for offset   
             if (iii == LetterStrokes-1)         
             {
                 (*XCoord) += (float)MaxLetterLength;
